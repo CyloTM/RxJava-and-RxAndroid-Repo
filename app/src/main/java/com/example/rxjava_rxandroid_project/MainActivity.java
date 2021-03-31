@@ -9,9 +9,14 @@ import android.widget.TextView;
 import com.example.rxjava_rxandroid_project.model.Task;
 import com.example.rxjava_rxandroid_project.util.DataSource;
 
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.ObservableEmitter;
+import io.reactivex.rxjava3.core.ObservableOnSubscribe;
 import io.reactivex.rxjava3.core.Observer;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.disposables.Disposable;
@@ -78,10 +83,258 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        
+
+        // Create Operator
+        //The Create() operator is obviously used to create Observables. It's the most basic but it's also probably the most flexible.
+        // Instantiate a single Task object to become an Observable
+        final Task task = new Task("Walk the dog", false, 4);
+
+        // Create the Observable
+        Observable<Task> singleTaskObservable = Observable
+                .create(new ObservableOnSubscribe<Task>() {
+                    @Override
+                    public void subscribe(ObservableEmitter<Task> emitter) throws Exception {
+                        if(!emitter.isDisposed()){
+                            emitter.onNext(task);
+                            emitter.onComplete();
+                        }
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
+
+        // Subscribe to the Observable and get the emitted object
+        singleTaskObservable.subscribe(new Observer<Task>() {
+            @Override
+            public void onSubscribe(Disposable d) {
+
+            }
+
+            @Override
+            public void onNext(Task task) {
+                Log.d(TAG, "onNext: single task: " + task.getDescription());
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+
+
+        // Instantiate a List of Task objects to become an Observable
+        final List<Task> tasks = DataSource.createTasksList();
+
+        // Create the Observable
+        Observable<Task> taskListObservable = Observable
+                .create(new ObservableOnSubscribe<Task>() {
+                    @Override
+                    public void subscribe(ObservableEmitter<Task> emitter) throws Exception {
+
+                        // Inside the subscribe method iterate through the list of tasks and call onNext(tasks)
+                        for(Task tasks: DataSource.createTasksList()){
+                            if(!emitter.isDisposed()){
+                                emitter.onNext(tasks);
+                            }
+                        }
+                        // Once the loop is complete, call the onComplete() method
+                        if(!emitter.isDisposed()){
+                            emitter.onComplete();
+                        }
+
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
+
+        // Subscribe to the Observable and get the emitted objects
+        taskListObservable.subscribe(new Observer<Task>() {
+            @Override
+            public void onSubscribe(Disposable d) {
+
+            }
+
+            @Override
+            public void onNext(Task tasks) {
+                Log.d(TAG, "onNext: task list: " + tasks.getDescription());
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+
+        // Just Operator
+        //# The Just() operator has the ability to accept a list of up to 10 entries.
+
+        // Create the Observable
+        Observable<Task> justObservable = Observable
+                .just(task)
+                .subscribeOn(Schedulers.io()) // What thread to do the work on
+                .observeOn(AndroidSchedulers.mainThread()); // What thread to observe the results on
+
+        justObservable.subscribe(new Observer<Task>() {
+            @Override
+            public void onSubscribe(Disposable d) {
+
+            }
+
+            @Override
+            public void onNext(Task task) {
+                Log.d(TAG, "onNext: single task: " + task.getDescription());
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+
+
+        // Range Operator
+        /*# range() is very simple and intuitive. It emits a range of objects.
+            As input, you pass a min value and a max value.
+            It will emit all the values in the range (Inclusive on the min but exclusive on the max).*/
+
+        Observable.range(0,11)
+                .observeOn(Schedulers.io())
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Observer<Integer>() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
+
+                    }
+
+                    @Override
+                    public void onNext(Integer integer) {
+                        Log.d(TAG, "onNext: " + integer);
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onComplete() {
+
+                    }
+                });
+
+
+        // Repeat Operator
+        /*# repeat() is another intuitively named operator.
+            However, repeat must be used in conjunction with another operator.
+            A good example is with the range() operator.*/
+
+        Observable.range(0,3)
+                .repeat(2)
+                .observeOn(Schedulers.io())
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Observer<Integer>() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
+
+                    }
+
+                    @Override
+                    public void onNext(Integer integer) {
+                        Log.d(TAG, "onNext: " + integer);
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onComplete() {
+
+                    }
+                });
+
+
+        // Interval Operator
+        // emit an observable every time interval
+        Observable<Long> intervalObservable = Observable
+                .interval(1, TimeUnit.SECONDS)
+                .subscribeOn(Schedulers.io())
+                .takeWhile(new Predicate<Long>() { // stop the process if more than 5 seconds passes
+                    @Override
+                    public boolean test(Long aLong) throws Exception {
+                        return aLong <= 5;
+                    }
+                })
+                .observeOn(AndroidSchedulers.mainThread());
+
+        intervalObservable.subscribe(new Observer<Long>() {
+            @Override
+            public void onSubscribe(Disposable d) {
+            }
+            @Override
+            public void onNext(Long aLong) {
+                Log.d(TAG, "onNext: interval: " + aLong);
+            }
+            @Override
+            public void onError(Throwable e) {
+
+            }
+            @Override
+            public void onComplete() {
+
+            }
+        });
+
+        // Timer Operator
+        // emit single observable after a given delay
+        Observable<Long> timeObservable = Observable
+                .timer(3, TimeUnit.SECONDS)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
+
+        timeObservable.subscribe(new Observer<Long>() {
+
+            long time = 0; // variable for demonstating how much time has passed
+
+            @Override
+            public void onSubscribe(Disposable d) {
+                time = System.currentTimeMillis() / 1000;
+            }
+            @Override
+            public void onNext(Long aLong) {
+                Log.d(TAG, "onNext: " + ((System.currentTimeMillis() / 1000) - time) + " seconds have elapsed." );
+            }
+            @Override
+            public void onError(Throwable e) {
+
+            }
+            @Override
+            public void onComplete() {
+
+            }
+        });
 
 
     }
+
+
+
 
     @Override
     protected void onDestroy() {
