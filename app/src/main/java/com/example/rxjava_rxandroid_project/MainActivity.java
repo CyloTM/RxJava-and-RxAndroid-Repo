@@ -10,6 +10,7 @@ import com.example.rxjava_rxandroid_project.model.Task;
 import com.example.rxjava_rxandroid_project.util.DataSource;
 
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
@@ -39,50 +40,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         mText = findViewById(R.id.text_view);
-
-        Observable<Task> taskObservable = Observable
-                .fromIterable(DataSource.createTasksList())
-                .subscribeOn(Schedulers.io())
-                .filter(new Predicate<Task>() {
-                    @Override
-                    public boolean test(Task task) throws Throwable {
-                        Log.d(TAG, "test: " + Thread.currentThread().getName());
-                        try {
-                            Thread.sleep(1000);
-                            } catch (InterruptedException e){
-                            e.printStackTrace();
-
-                        }
-                        return task.isComplete();
-                    }
-                })
-                .observeOn(AndroidSchedulers.mainThread());
-
-        taskObservable.subscribe(new Observer<Task>(){
-
-            @Override
-            public void onSubscribe(@NonNull Disposable d) {
-                Log.d(TAG, "onSubscribe: called");
-                disposable.add(d);
-            }
-
-            @Override
-            public void onNext(@NonNull Task task) {
-                Log.d(TAG, "onNext: " + Thread.currentThread().getName());
-                Log.d(TAG, "onNext: " + task.getDescription());
-            }
-
-            @Override
-            public void onError(@NonNull Throwable e) {
-                Log.d(TAG, "onError: " + e);
-            }
-
-            @Override
-            public void onComplete() {
-                Log.d(TAG, "onComplete: called");
-            }
-        });
-
 
         // Create Operator
         //The Create() operator is obviously used to create Observables. It's the most basic but it's also probably the most flexible.
@@ -310,7 +267,7 @@ public class MainActivity extends AppCompatActivity {
 
         timeObservable.subscribe(new Observer<Long>() {
 
-            long time = 0; // variable for demonstating how much time has passed
+            long time = 0; // variable for demonstrating how much time has passed
 
             @Override
             public void onSubscribe(Disposable d) {
@@ -327,6 +284,127 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onComplete() {
 
+            }
+        });
+
+        // fromArray Operator
+        // emit an arbitrary number of items that are known upfront.
+        Task[] list = new Task[5];
+        list[0] = (new Task("Take out the trash", true, 3));
+        list[1] = (new Task("Walk the dog", false, 2));
+        list[2] = (new Task("Make my bed", true, 1));
+        list[3] = (new Task("Unload the dishwasher", false, 0));
+        list[4] = (new Task("Make dinner", true, 5));
+
+        Observable<Task> arrayObservable = Observable
+                .fromArray(list)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
+
+        arrayObservable.subscribe(new Observer<Task>() {
+            @Override
+            public void onSubscribe(Disposable d) {
+
+            }
+
+            @Override
+            public void onNext(Task task) {
+                Log.d(TAG, "onNext: : " + task.getDescription());
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+
+
+        // fromCallable Operator
+        /* Will execute a block of code (usually a method) and return a result.
+           It will not execute the method immediately.
+           It will only execute the method once a subscriber has subscribed.
+
+        Observable<Task> callable = Observable
+                .fromCallable(new Callable<Task>() {
+                    @Override
+                    public Task call() throws Exception {
+                        return MyDatabase.getTask();
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
+
+        // method will be executed since now something has subscribed
+        callable.subscribe(new Observer<Task>() {
+            @Override
+            public void onSubscribe(Disposable d) {
+
+            }
+
+            @Override
+            public void onNext(Task task) {
+                Log.d(TAG, "onNext: : " + task.getDescription());
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });*/
+
+        // fromIterable Operator
+        /* To emit an arbitrary number of items that are known upfront.
+           Same as the fromArray() operator but it's an iterable.*/
+        Observable<Task> taskObservable = Observable
+                .fromIterable(DataSource.createTasksList())
+                .subscribeOn(Schedulers.io())
+                .filter(new Predicate<Task>() {
+                    @Override
+                    public boolean test(Task task) throws Throwable {
+                        Log.d(TAG, "test: " + Thread.currentThread().getName());
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e){
+                            e.printStackTrace();
+
+                        }
+                        return task.isComplete();
+                    }
+                })
+                .observeOn(AndroidSchedulers.mainThread());
+
+        taskObservable.subscribe(new Observer<Task>(){
+
+            @Override
+            public void onSubscribe(@NonNull Disposable d) {
+                Log.d(TAG, "onSubscribe: called");
+                disposable.add(d);
+            }
+
+            @Override
+            public void onNext(@NonNull Task task) {
+                Log.d(TAG, "onNext: " + Thread.currentThread().getName());
+                Log.d(TAG, "onNext: " + task.getDescription());
+            }
+
+            @Override
+            public void onError(@NonNull Throwable e) {
+                Log.d(TAG, "onError: " + e);
+            }
+
+            @Override
+            public void onComplete() {
+                Log.d(TAG, "onComplete: called");
             }
         });
 
